@@ -18,10 +18,12 @@ amount = 100
 
 class Teamleader(object):
 
+
     def __init__(self, api_group, api_secret):
         log.debug("Initializing Teamleader with group {0} and secret {1}".format(api_group, api_secret))
         self.group = api_group
         self.secret = api_secret
+
 
     def _request(self, endpoint, data={}):
         log.debug("Making a request to the Teamleader API endpoint {0}".format(endpoint))
@@ -43,6 +45,7 @@ class Teamleader(object):
 
         raise TeamleaderUnknownAPIError(message=response['reason'], api_response=r)
 
+
     def get_users(self, show_inactive_users=False):
         """Getting all users.
 
@@ -56,6 +59,7 @@ class Teamleader(object):
 
         return self._request('getUsers', {'show_inactive_users': int(show_inactive_users)})
 
+
     def get_departments(self):
         """Getting all departments.
 
@@ -65,6 +69,7 @@ class Teamleader(object):
 
         return self._request('getDepartments')
 
+
     def get_tags(self):
         """Getting all tags.
 
@@ -73,6 +78,7 @@ class Teamleader(object):
         """
 
         return self._request('getTags')
+
 
     def get_segments(self, object_type):
         """Getting segments.
@@ -90,6 +96,7 @@ class Teamleader(object):
             raise InvalidInputError("Invalid contents of object_type.")
 
         return self._request('getSegments', {'object_type': object_type})
+
 
     def add_contact(self, forename, surname, email, salutation=None, telephone=None, gsm=None,
             website=None, country=None, zipcode=None, city=None, street=None, number=None,
@@ -166,7 +173,7 @@ class Teamleader(object):
         data['add_tag_by_string'] = ','.join(data.pop('tags'))
 
         for custom_field_id, custom_field_value in data.pop('custom_fields').items():
-            data['custom_field_' + custom_field_id] = custom_field_value
+            data['custom_field_' + str(custom_field_id)] = custom_field_value
 
         if date_of_birth is not None:
             data['dob'] = time.mktime(data.pop('date_of_birth').timetuple())
@@ -178,6 +185,7 @@ class Teamleader(object):
         data['automerge_by_email'] = int(automerge_by_email)
 
         return self._request('addContact', data)
+
 
     def update_contact(self, contact_id, track_changes=True,
             forename=None, surname=None, email=None, telephone=None, gsm=None,
@@ -252,7 +260,7 @@ class Teamleader(object):
         data['remove_tag_by_string'] = ','.join(data.pop('del_tags'))
 
         for custom_field_id, custom_field_value in data.pop('custom_fields').items():
-            data['custom_field_' + custom_field_id] = custom_field_value
+            data['custom_field_' + str(custom_field_id)] = custom_field_value
 
         if date_of_birth is not None:
             data['dob'] = time.mktime(data.pop('date_of_birth').timetuple())
@@ -269,6 +277,7 @@ class Teamleader(object):
 
         self._request('deleteContact', {'contact_id': contact_id})
 
+
     def link_contact_company(self, contact_id, company_id, function=None):
         """Deleting a contact.
 
@@ -280,6 +289,7 @@ class Teamleader(object):
 
         self._request('linkContactToCompany', {'contact_id': contact_id, 'company_id': company_id, 'mode': 'link', 'function': function})
 
+
     def unlink_contact_company(self, contact_id, company_id):
         """Deleting a contact.
 
@@ -289,6 +299,7 @@ class Teamleader(object):
         """
 
         self._request('linkContactToCompany', {'contact_id': contact_id, 'company_id': company_id, 'mode': 'unlink'})
+
 
     def get_contacts(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=[]):
         """Searching Teamleader contacts.
@@ -302,8 +313,8 @@ class Teamleader(object):
                 have the tag.
             segment_id: integer: The ID of a segment created for contacts. Teamleader will
                 only return contacts that have been filtered out by the segment settings.
-            selected_customfields: comma-separated list of the IDs of the custom fields you
-                wish to select (max 10).
+            selected_customfields: list of the IDs of the custom fields you wish to select
+                (max 10).
 
         Returns:
             Iterator over the contacts found.
@@ -327,7 +338,7 @@ class Teamleader(object):
             page_data = {'amount': amount, 'pageno': pageno}
             page_data.update(data)
             contacts = self._request('getContacts', page_data)
-            there_are_more_pages = len(contacts) > 0
+            there_are_more_pages = (len(companies) == amount)
             for contact in contacts:
                 yield contact
             pageno += 1
@@ -359,4 +370,241 @@ class Teamleader(object):
         contacts = self._request('getContactsByCompany', {'company_id': company_id})
         for contact in contacts:
             yield contact
+
+
+    def add_company(self, name, email=None, vat_code=None, telephone=None, country=None, zipcode=None,
+            city=None, street=None, number=None, website=None, description=None, account_manager_id=None,
+            local_business_number=None, business_type=None, language=None, tags=[], payment_term=None,
+            automerge_by_name=False, automerge_by_email=False, automerge_by_vat_code=False, custom_fields={}):
+        """Adding a company to Teamleader.
+
+        Args:
+            name: string
+            email: string
+            vat_code: string
+            telephone: string
+            country: string: country code according to ISO 3166-1 alpha-2. For Belgium: "BE"
+            zipcode: string
+            city: string
+            street: string
+            number: string
+            website: string
+            description: string
+            account_manager_id: ID: id of the user.
+            local_business_number: string containing the local business number (KVK in the Netherlands)
+            business_type: string containing the company type (eg NV, BVBA,..)
+            language: string: language code according to ISO 639-1. For Dutch: "NL"
+            tags: list of tags. Existing tags will be reused, other tags will be automatically created
+                for you.
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM. Default: 30D
+            automerge_by_name: True/False If this flag is set to True, Teamleader will merge this info
+                into an existing company with the same name, if it finds any.
+            automerge_by_email: True/False If this flag is set to True, Teamleader will merge this info
+                into an existing company with the same email address, if it finds any.
+            automerge_by_vat_code: True/False If this flag is set to True, Teamleader will merge this info
+                into an existing company with the same VAT code, if it finds any.
+            custom_fields: dict with keys the IDs of your custom fields and values the value to be set.
+
+        Returns:
+            ID of the contact that was added.
+        """
+
+        # get all arguments
+        data = locals()
+        for key in data.keys():
+            if data[key] is None:
+                del data[key]
+
+        # argument validation
+        if type(tags) != type([]):
+            raise InvalidInputError("Invalid contents of argument tags.")
+
+        if type(custom_fields) != type({}):
+            raise InvalidInputError("Invalid contents of argument custom_fields.")
+
+        if country is not None:
+            try:
+                pycountry.countries.get(alpha2=country.upper())
+            except:
+                raise InvalidInputError("Invalid contents of argument country.")
+
+        if language is not None:
+            try:
+                pycountry.languages.get(iso639_1_code=language.lower())
+            except:
+                raise InvalidInputError("Invalid contents of argument language.")
+
+        if payment_term is not None:
+            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+                raise InvalidInputError("Invalid contents of argument payment_term.")
+
+        # convert data elements that need conversion
+        data['add_tag_by_string'] = ','.join(data.pop('tags'))
+
+        for custom_field_id, custom_field_value in data.pop('custom_fields').items():
+            data['custom_field_' + str(custom_field_id)] = custom_field_value
+
+        data['automerge_by_name'] = int(automerge_by_name)
+        data['automerge_by_email'] = int(automerge_by_email)
+        data['automerge_by_vat_code'] = int(automerge_by_vat_code)
+
+        return self._request('addCompany', data)
+
+
+    def update_company(self, company_id, track_changes=True,
+            name=None, email=None, vat_code=None, telephone=None, country=None, zipcode=None,
+            city=None, street=None, number=None, website=None, description=None, account_manager_id=None,
+            local_business_number=None, business_type=None, language=None, payment_term=None,
+            tags=[], del_tags=[], custom_fields={}):
+        """Updating company information.
+
+        Args:
+            company_id: integer: ID of the company
+            track_changes: True/False: if set to True, all changes are logged and visible to users
+                in the web-interface
+            name: string
+            email: string
+            vat_code: string
+            telephone: string
+            country: string: country code according to ISO 3166-1 alpha-2. For Belgium: "BE"
+            zipcode: string
+            city: string
+            street: string
+            number: string
+            website: string
+            description: string
+            account_manager_id: ID: id of the user.
+            local_business_number: string containing the local business number (KVK in the Netherlands)
+            business_type: string containing the company type (eg NV, BVBA,..)
+            language: string: language code according to ISO 639-1. For Dutch: "NL"
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM. Default: 30D
+            tags: list of tags. Existing tags will be reused, other tags will be automatically created
+                for you.
+            del_tags: list of tags to remove.
+            custom_fields: dict with keys the IDs of your custom fields and values the value to be set.
+        """
+
+        # get all arguments
+        data = locals()
+        for key in data.keys():
+            if data[key] is None:
+                del data[key]
+
+        # argument validation
+        if type(tags) != type([]):
+            raise InvalidInputError("Invalid contents of argument tags.")
+
+        if type(custom_fields) != type({}):
+            raise InvalidInputError("Invalid contents of argument custom_fields.")
+
+        if country is not None:
+            try:
+                pycountry.countries.get(alpha2=country.upper())
+            except:
+                raise InvalidInputError("Invalid contents of argument country.")
+
+        if language is not None:
+            try:
+                pycountry.languages.get(iso639_1_code=language.lower())
+            except:
+                raise InvalidInputError("Invalid contents of argument language.")
+
+        if payment_term is not None:
+            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+                raise InvalidInputError("Invalid contents of argument payment_term.")
+
+        # convert data elements that need conversion
+        data['add_tag_by_string'] = ','.join(data.pop('tags'))
+        data['remove_tag_by_string'] = ','.join(data.pop('del_tags'))
+
+        for custom_field_id, custom_field_value in data.pop('custom_fields').items():
+            data['custom_field_' + str(custom_field_id)] = custom_field_value
+
+        self._request('updateCompany', data)
+
+
+    def delete_company(self, company_id):
+        """Deleting a company.
+
+        Args:
+            company_id: integer: ID of the company
+        """
+
+        self._request('deleteCompany', {'company_id': company_id})
+
+
+    def get_companies(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=[]):
+        """Searching Teamleader companies.
+
+        Args:
+            query: string: a search string. Teamleader will try to match each part of the
+                string to the company name and email address.
+            modified_since: integer: Unix timestamp. Teamleader will only return companies that
+                have been added or modified since that timestamp.
+            filter_by_tag: string: Company tag. Teamleader will only return companies that
+                have the tag.
+            segment_id: integer: The ID of a segment created for companies. Teamleader will
+                only return companies that have been filtered out by the segment settings.
+            selected_customfields: list of the IDs of the custom fields you wish to select
+                (max 10).
+
+        Returns:
+            Iterator over the companies found.
+        """
+
+        data = {}
+        if query is not None:
+            data['searchby'] = query
+        if modified_since is not None:
+            data['modifiedsince'] = modified_since
+        if filter_by_tag is not None:
+            data['filter_by_tag'] = filter_by_tag
+        if segment_id is not None:
+            data['segment_id'] = segment_id
+        if len(selected_customfields) > 0:
+            data['selected_customfields'] = ','.join(selected_customfields)
+
+        there_are_more_pages = True
+        pageno = 0
+        while there_are_more_pages:
+            page_data = {'amount': amount, 'pageno': pageno}
+            page_data.update(data)
+            companies = self._request('getCompanies', page_data)
+            there_are_more_pages = (len(companies) == amount)
+            for company in companies:
+                yield company
+            pageno += 1
+
+
+    def get_company(self, company_id):
+        """Fetching company information.
+
+        Args:
+            company_id: integer: ID of the company
+
+        Returns:
+            Dictionary with company details.
+        """
+
+        return self._request('getCompany', {'company_id': company_id})
+
+
+    def get_business_types(self, country):
+        """Getting all possible business types for a country.
+
+        Args:
+            country: country code according to ISO 3166-1 alpha-2. For Belgium: "BE"
+
+        Returns:
+            List of names of business types (legal structures) a company can have
+            within a certain country.
+        """
+
+        if country is not None:
+            try:
+                pycountry.countries.get(alpha2=country.upper())
+            except:
+                raise InvalidInputError("Invalid contents of argument country.")
+
+        return [d['name'] for d in self._request('getBusinessTypes', {'country': country})]
 
