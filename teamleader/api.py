@@ -610,3 +610,92 @@ class Teamleader(object):
 
         return [d['name'] for d in self._request('getBusinessTypes', {'country': country})]
 
+
+    def add_invoice(self, sys_department_id, contact_id=None, company_id=None, for_attention_of=None,
+            payment_term=None, invoice_lines=[], draft_invoice=False, layout_id=None, date=None,
+            po_number=None, direct_debit=False, comments=False, force_set_number=None):
+        """Adding an Invoice to Teamleader.
+
+        Args:
+            sys_department_id: ID of the department the invoice will be added to
+            contact_id: integer: ID of the contact for which this invoice is intended.
+            company_id: integer: ID of the company for which this invoice is intended.
+            invoice_lines: list of dictionaries, each containing the following keys:
+                description: string
+                price: decimal
+                amount: decimal
+                vat: 00 / 06 / 12 / 21 / CM / EX / MC / VCMD: the vat tariff for this line
+                product_id: id of the product (optional)
+                account: id of the bookkeeping account (optional)
+                subtitle: string (optional)
+            for_attention_of: string
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM
+            draft_invoice: True/False: set to True to insert this invoice as a draft. (default: False)
+            layout_id: ID of the custom layout you wish to use for this invoice
+            date: datetime.date object: the date of the invoice. (default: today)
+            po_number: string
+            direct_debit: True/False: set to True to enable direct debit
+            comments: string
+            force_set_number: integer: force invoice number to the given integer
+
+        Returns:
+            ID of the invoice that was added.
+        """
+
+        # get all arguments
+        data = locals()
+        for key in data.keys():
+            if data[key] is None:
+                del data[key]
+
+        # argument validation
+        if contact_id is None and company_id is None:
+            raise InvalidInputError("One of contact_id or company_id is required.")
+
+        if contact_id is not None and company_id is not None:
+            raise InvalidInputError("Only one of contact_id or company_id is can be set.")
+
+        if payment_term is not None:
+            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+                raise InvalidInputError("Invalid contents of argument payment_term.")
+
+        for line in invoice_lines:
+            if not set(['description', 'amount', 'vat', 'price']).issubset(line.keys()):
+                raise InvalidInputError("Fields description, amount, vat and price are required for each line.")
+
+            if line['vat'] not in ['00', '06', '12', '21', 'CM', 'EX', 'MC', 'VCMD']:
+                raise InvalidInputError("Invalid contents of argument vat.")
+
+        if date is not None and type(date) != datetime.date:
+            raise InvalidInputError("Invalid contents of argument date.")
+
+        # convert data elements that need conversion
+        if contact_id is not None:
+            data['contact_or_company'] = 'contact'
+            data['contact_or_company_id'] = data.pop('contact_id')
+        else:
+            data['contact_or_company'] = 'company'
+            data['contact_or_company_id'] = data.pop('company_id')
+
+        i = 1
+        for line in invoice_lines:
+            data['description_' + str(i)] = line['description']
+            data['price_' + str(i)] = line['price']
+            data['amount_' + str(i)] = line['amount']
+            data['vat_' + str(i)] = line['vat']
+
+            if 'product_id' in data:
+                data['product_id_' + str(i)] = line['product_id']
+            if 'account' in data:
+                data['account_' + str(i)] = line['account']
+            if 'subtitle' in data:
+                data['subtitle_' + str(i)] = line['subtitle']
+
+            i += 1
+
+        del(data['invoice_lines'])
+
+        if date is not None:
+            data['date'] = data.pop('date').strftime('%d/%m/%Y')
+
+        return self._request('addInvoice', data)
