@@ -26,6 +26,8 @@ class Teamleader(object):
 
 
     def _request(self, endpoint, data={}):
+        '''Internal method for making a request to a Teamleader endpoint.
+        '''
         log.debug("Making a request to the Teamleader API endpoint {0}".format(endpoint))
         data['api_group'] = self.group
         data['api_secret'] = self.secret
