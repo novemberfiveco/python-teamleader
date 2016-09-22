@@ -699,3 +699,34 @@ class Teamleader(object):
             data['date'] = data.pop('date').strftime('%d/%m/%Y')
 
         return self._request('addInvoice', data)
+
+
+    def add_creditnote(self):
+        pass
+
+    def update_invoice_payment_status(self):
+        pass
+
+    def book_draft_invoice(self):
+        pass
+
+    def update_invoice(self):
+        pass
+
+    def update_invoice_comment(self):
+        pass
+
+    def delete_invoice(self):
+        pass
+
+    def get_invoices(self):
+        pass
+
+    def get_creditnotes(self):
+        pass
+
+    def get_invoice(self):
+        pass
+
+    def get_creditnote(self):
+        pass
