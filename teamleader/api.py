@@ -1,6 +1,6 @@
-'''
+"""
 Teamleader API Wrapper class
-'''
+"""
 
 import requests
 import logging
@@ -10,29 +10,32 @@ import time
 
 from teamleader.exceptions import *
 
+
 logging.basicConfig(level='DEBUG')
 log = logging.getLogger('teamleader.api')
 
 base_url = "https://www.teamleader.be/api/{0}.php"
 amount = 100
 
-class Teamleader(object):
 
+class Teamleader(object):
 
     def __init__(self, api_group, api_secret):
         log.debug("Initializing Teamleader with group {0} and secret {1}".format(api_group, api_secret))
         self.group = api_group
         self.secret = api_secret
 
-
-    def _request(self, endpoint, data={}):
-        '''Internal method for making a request to a Teamleader endpoint.
-        '''
+    def _request(self, endpoint, data=None):
+        """Internal method for making a request to a Teamleader endpoint.
+        """
         log.debug("Making a request to the Teamleader API endpoint {0}".format(endpoint))
+        data = data or {}
         data['api_group'] = self.group
         data['api_secret'] = self.secret
+
         r = requests.post(base_url.format(endpoint), data=data)
         response = r.json()
+
         if r.status_code == requests.codes.unauthorized:
             raise TeamleaderUnauthorizedError(message=response['reason'], api_response=r)
 
@@ -47,6 +50,12 @@ class Teamleader(object):
 
         raise TeamleaderUnknownAPIError(message=response['reason'], api_response=r)
 
+    @staticmethod
+    def _validate_type(arg, t):
+        if arg and not isinstance(arg, t):
+            raise InvalidInputError('Invalid argument: ' + repr(arg))
+
+        return arg or t()
 
     def get_users(self, show_inactive_users=False):
         """Getting all users.
@@ -61,7 +70,6 @@ class Teamleader(object):
 
         return self._request('getUsers', {'show_inactive_users': int(show_inactive_users)})
 
-
     def get_departments(self):
         """Getting all departments.
 
@@ -71,7 +79,6 @@ class Teamleader(object):
 
         return self._request('getDepartments')
 
-
     def get_tags(self):
         """Getting all tags.
 
@@ -80,7 +87,6 @@ class Teamleader(object):
         """
 
         return self._request('getTags')
-
 
     def get_segments(self, object_type):
         """Getting segments.
@@ -99,11 +105,10 @@ class Teamleader(object):
 
         return self._request('getSegments', {'object_type': object_type})
 
-
     def add_contact(self, forename, surname, email, salutation=None, telephone=None, gsm=None,
             website=None, country=None, zipcode=None, city=None, street=None, number=None,
-            language=None, gender=None, date_of_birth=None, description=None, newsletter=None, tags=[],
-            automerge_by_name=False, automerge_by_email=False, custom_fields={}, tracking=None,
+            language=None, gender=None, date_of_birth=None, description=None, newsletter=None, tags=None,
+            automerge_by_name=False, automerge_by_email=False, custom_fields=None, tracking=None,
             tracking_long=None):
         """Adding a contact to Teamleader.
 
@@ -132,8 +137,8 @@ class Teamleader(object):
             automerge_by_email: True/False If this flag is set to True, Teamleader will merge this
                 info into an existing contact with the same email address, if it finds any.
             custom_fields: dict with keys the IDs of your custom fields and values the value to be set.
-            tracking string: title of the activity
-            tracking_long string: description of the activity
+            tracking: title of the activity
+            tracking_long: description of the activity
 
         Returns:
             ID of the contact that was added.
@@ -149,11 +154,8 @@ class Teamleader(object):
         if gender is not None and gender not in ['M', 'F', 'U']:
             raise InvalidInputError("Invalid contents of argument gender.")
 
-        if type(tags) != type([]):
-            raise InvalidInputError("Invalid contents of argument tags.")
-
-        if type(custom_fields) != type({}):
-            raise InvalidInputError("Invalid contents of argument custom_fields.")
+        tags = self._validate_type(tags, list)
+        custom_fields = self._validate_type(custom_fields, dict)
 
         if country is not None:
             try:
@@ -169,7 +171,6 @@ class Teamleader(object):
 
         if date_of_birth is not None and type(date_of_birth) != datetime.date:
             raise InvalidInputError("Invalid contents of argument date_of_birth.")
-
 
         # convert data elements that need conversion
         data['add_tag_by_string'] = ','.join(data.pop('tags'))
@@ -188,12 +189,11 @@ class Teamleader(object):
 
         return self._request('addContact', data)
 
-
     def update_contact(self, contact_id, track_changes=True,
             forename=None, surname=None, email=None, telephone=None, gsm=None,
             website=None, country=None, zipcode=None, city=None, street=None, number=None,
             language=None, gender=None, date_of_birth=None, description=None,
-            tags=[], del_tags=[], custom_fields={}, linked_company_ids=None):
+            tags=None, del_tags=None, custom_fields=None, linked_company_ids=None):
         """Updating contact information.
 
         Args:
@@ -232,14 +232,9 @@ class Teamleader(object):
         if gender is not None and gender not in ['M', 'F', 'U']:
             raise InvalidInputError("Invalid contents of argument gender.")
 
-        if type(tags) != type([]):
-            raise InvalidInputError("Invalid contents of argument tags.")
-
-        if type(del_tags) != type([]):
-            raise InvalidInputError("Invalid contents of argument tags.")
-
-        if type(custom_fields) != type({}):
-            raise InvalidInputError("Invalid contents of argument custom_fields.")
+        tags = self._validate_type(tags, list)
+        del_tags = self._validate_type(del_tags, list)
+        custom_fields = self._validate_type(custom_fields, dict)
 
         if country is not None:
             try:
@@ -256,7 +251,6 @@ class Teamleader(object):
         if date_of_birth is not None and type(date_of_birth) != datetime.date:
             raise InvalidInputError("Invalid contents of argument date_of_birth.")
 
-
         # convert data elements that need conversion
         data['add_tag_by_string'] = ','.join(data.pop('tags'))
         data['remove_tag_by_string'] = ','.join(data.pop('del_tags'))
@@ -269,7 +263,6 @@ class Teamleader(object):
 
         self._request('updateContact', data)
 
-
     def delete_contact(self, contact_id):
         """Deleting a contact.
 
@@ -278,7 +271,6 @@ class Teamleader(object):
         """
 
         self._request('deleteContact', {'contact_id': contact_id})
-
 
     def link_contact_company(self, contact_id, company_id, function=None):
         """Deleting a contact.
@@ -291,7 +283,6 @@ class Teamleader(object):
 
         self._request('linkContactToCompany', {'contact_id': contact_id, 'company_id': company_id, 'mode': 'link', 'function': function})
 
-
     def unlink_contact_company(self, contact_id, company_id):
         """Deleting a contact.
 
@@ -302,8 +293,7 @@ class Teamleader(object):
 
         self._request('linkContactToCompany', {'contact_id': contact_id, 'company_id': company_id, 'mode': 'unlink'})
 
-
-    def get_contacts(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=[]):
+    def get_contacts(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=None):
         """Searching Teamleader contacts.
 
         Args:
@@ -331,7 +321,8 @@ class Teamleader(object):
             data['filter_by_tag'] = filter_by_tag
         if segment_id is not None:
             data['segment_id'] = segment_id
-        if len(selected_customfields) > 0:
+        selected_customfields = self._validate_type(selected_customfields, list)
+        if selected_customfields:
             data['selected_customfields'] = ','.join(selected_customfields)
 
         there_are_more_pages = True
@@ -340,11 +331,10 @@ class Teamleader(object):
             page_data = {'amount': amount, 'pageno': pageno}
             page_data.update(data)
             contacts = self._request('getContacts', page_data)
-            there_are_more_pages = (len(companies) == amount)
+            there_are_more_pages = (len(contacts) == amount)
             for contact in contacts:
                 yield contact
             pageno += 1
-
 
     def get_contact(self, contact_id):
         """Fetching contact information.
@@ -357,7 +347,6 @@ class Teamleader(object):
         """
 
         return self._request('getContact', {'contact_id': contact_id})
-
 
     def get_contacts_by_company(self, company_id):
         """Getting all contacts related to a company.
@@ -373,11 +362,10 @@ class Teamleader(object):
         for contact in contacts:
             yield contact
 
-
     def add_company(self, name, email=None, vat_code=None, telephone=None, country=None, zipcode=None,
             city=None, street=None, number=None, website=None, description=None, account_manager_id=None,
-            local_business_number=None, business_type=None, language=None, tags=[], payment_term=None,
-            automerge_by_name=False, automerge_by_email=False, automerge_by_vat_code=False, custom_fields={}):
+            local_business_number=None, business_type=None, language=None, tags=None, payment_term=None,
+            automerge_by_name=False, automerge_by_email=False, automerge_by_vat_code=False, custom_fields=None):
         """Adding a company to Teamleader.
 
         Args:
@@ -418,11 +406,8 @@ class Teamleader(object):
                 del data[key]
 
         # argument validation
-        if type(tags) != type([]):
-            raise InvalidInputError("Invalid contents of argument tags.")
-
-        if type(custom_fields) != type({}):
-            raise InvalidInputError("Invalid contents of argument custom_fields.")
+        tags = self._validate_type(tags, list)
+        custom_fields = self._validate_type(custom_fields, dict)
 
         if country is not None:
             try:
@@ -452,12 +437,11 @@ class Teamleader(object):
 
         return self._request('addCompany', data)
 
-
     def update_company(self, company_id, track_changes=True,
             name=None, email=None, vat_code=None, telephone=None, country=None, zipcode=None,
             city=None, street=None, number=None, website=None, description=None, account_manager_id=None,
             local_business_number=None, business_type=None, language=None, payment_term=None,
-            tags=[], del_tags=[], custom_fields={}):
+            tags=None, del_tags=None, custom_fields=None):
         """Updating company information.
 
         Args:
@@ -493,11 +477,9 @@ class Teamleader(object):
                 del data[key]
 
         # argument validation
-        if type(tags) != type([]):
-            raise InvalidInputError("Invalid contents of argument tags.")
-
-        if type(custom_fields) != type({}):
-            raise InvalidInputError("Invalid contents of argument custom_fields.")
+        tags = self._validate_type(tags, list)
+        del_tags = self._validate_type(del_tags, list)
+        custom_fields = self._validate_type(custom_fields, dict)
 
         if country is not None:
             try:
@@ -524,7 +506,6 @@ class Teamleader(object):
 
         self._request('updateCompany', data)
 
-
     def delete_company(self, company_id):
         """Deleting a company.
 
@@ -534,8 +515,7 @@ class Teamleader(object):
 
         self._request('deleteCompany', {'company_id': company_id})
 
-
-    def get_companies(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=[]):
+    def get_companies(self, query=None, modified_since=None, filter_by_tag=None, segment_id=None, selected_customfields=None):
         """Searching Teamleader companies.
 
         Args:
@@ -563,7 +543,8 @@ class Teamleader(object):
             data['filter_by_tag'] = filter_by_tag
         if segment_id is not None:
             data['segment_id'] = segment_id
-        if len(selected_customfields) > 0:
+        selected_customfields = self._validate_type(selected_customfields, list)
+        if selected_customfields:
             data['selected_customfields'] = ','.join(selected_customfields)
 
         there_are_more_pages = True
@@ -577,7 +558,6 @@ class Teamleader(object):
                 yield company
             pageno += 1
 
-
     def get_company(self, company_id):
         """Fetching company information.
 
@@ -589,7 +569,6 @@ class Teamleader(object):
         """
 
         return self._request('getCompany', {'company_id': company_id})
-
 
     def get_business_types(self, country):
         """Getting all possible business types for a country.
@@ -610,9 +589,8 @@ class Teamleader(object):
 
         return [d['name'] for d in self._request('getBusinessTypes', {'country': country})]
 
-
     def add_invoice(self, sys_department_id, contact_id=None, company_id=None, for_attention_of=None,
-            payment_term=None, invoice_lines=[], draft_invoice=False, layout_id=None, date=None,
+            payment_term=None, invoice_lines=None, draft_invoice=False, layout_id=None, date=None,
             po_number=None, direct_debit=False, comments=False, force_set_number=None):
         """Adding an Invoice to Teamleader.
 
@@ -659,8 +637,9 @@ class Teamleader(object):
             if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
                 raise InvalidInputError("Invalid contents of argument payment_term.")
 
+        invoice_lines = self._validate_type(invoice_lines, list)
         for line in invoice_lines:
-            if not set(['description', 'amount', 'vat', 'price']).issubset(line.keys()):
+            if not {'description', 'amount', 'vat', 'price'}.issubset(line.keys()):
                 raise InvalidInputError("Fields description, amount, vat and price are required for each line.")
 
             if line['vat'] not in ['00', '06', '12', '21', 'CM', 'EX', 'MC', 'VCMD']:
@@ -699,7 +678,6 @@ class Teamleader(object):
             data['date'] = data.pop('date').strftime('%d/%m/%Y')
 
         return self._request('addInvoice', data)
-
 
     def add_creditnote(self):
         pass

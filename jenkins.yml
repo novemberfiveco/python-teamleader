@@ -1,0 +1,20 @@
+---
+
+jobs:
+- platform: python
+  name: Tests
+  build_commands:
+  - type: pytest
+    coverage_path: teamleader
+  trigger: fast
+  slack_channel: automation
+
+{% if branch == 'master' %}
+- platform: python
+  build_commands:
+  - type: s3pypi
+  trigger:
+    type: job
+    job: Tests
+  slack_channel: automation
+{% endif %}
