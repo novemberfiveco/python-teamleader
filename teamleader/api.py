@@ -591,7 +591,7 @@ class Teamleader(object):
 
     def add_invoice(self, sys_department_id, contact_id=None, company_id=None, for_attention_of=None,
             payment_term=None, invoice_lines=None, draft_invoice=False, layout_id=None, date=None,
-            po_number=None, direct_debit=False, comments=False, force_set_number=None):
+            po_number=None, direct_debit=False, comments=None, force_set_number=None):
         """Adding an Invoice to Teamleader.
 
         Args:
