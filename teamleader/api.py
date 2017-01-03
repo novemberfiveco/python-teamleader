@@ -11,7 +11,7 @@ import time
 from teamleader.exceptions import *
 
 
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='ERROR')
 log = logging.getLogger('teamleader.api')
 
 base_url = "https://www.teamleader.be/api/{0}.php"
@@ -56,6 +56,16 @@ class Teamleader(object):
             raise InvalidInputError('Invalid argument: ' + repr(arg))
 
         return arg or t()
+
+    @staticmethod
+    def _clean_input_to_dict(data):
+        for key in data.keys():
+            if data[key] is None:
+                del data[key]
+            elif isinstance(data[key], bool):
+                data[key] = int(data[key])
+        return data
+
 
     def get_users(self, show_inactive_users=False):
         """Getting all users.
@@ -145,10 +155,7 @@ class Teamleader(object):
         """
 
         # get all arguments
-        data = locals()
-        for key in data.keys():
-            if data[key] is None:
-                del data[key]
+        data = self._clean_input_to_dict(locals())
 
         # argument validation
         if gender is not None and gender not in ['M', 'F', 'U']:
@@ -223,10 +230,7 @@ class Teamleader(object):
         """
 
         # get all arguments
-        data = locals()
-        for key in data.keys():
-            if data[key] is None:
-                del data[key]
+        data = self._clean_input_to_dict(locals())
 
         # argument validation
         if gender is not None and gender not in ['M', 'F', 'U']:
@@ -323,7 +327,7 @@ class Teamleader(object):
             data['segment_id'] = segment_id
         selected_customfields = self._validate_type(selected_customfields, list)
         if selected_customfields:
-            data['selected_customfields'] = ','.join(selected_customfields)
+            data['selected_customfields'] = ','.join([str(x) for x in selected_customfields])
 
         there_are_more_pages = True
         pageno = 0
@@ -400,10 +404,7 @@ class Teamleader(object):
         """
 
         # get all arguments
-        data = locals()
-        for key in data.keys():
-            if data[key] is None:
-                del data[key]
+        data = self._clean_input_to_dict(locals())
 
         # argument validation
         tags = self._validate_type(tags, list)
@@ -471,10 +472,7 @@ class Teamleader(object):
         """
 
         # get all arguments
-        data = locals()
-        for key in data.keys():
-            if data[key] is None:
-                del data[key]
+        data = self._clean_input_to_dict(locals())
 
         # argument validation
         tags = self._validate_type(tags, list)
@@ -545,7 +543,7 @@ class Teamleader(object):
             data['segment_id'] = segment_id
         selected_customfields = self._validate_type(selected_customfields, list)
         if selected_customfields:
-            data['selected_customfields'] = ','.join(selected_customfields)
+            data['selected_customfields'] = ','.join([str(x) for x in selected_customfields])
 
         there_are_more_pages = True
         pageno = 0
@@ -621,10 +619,7 @@ class Teamleader(object):
         """
 
         # get all arguments
-        data = locals()
-        for key in data.keys():
-            if data[key] is None:
-                del data[key]
+        data = self._clean_input_to_dict(locals())
 
         # argument validation
         if contact_id is None and company_id is None:
