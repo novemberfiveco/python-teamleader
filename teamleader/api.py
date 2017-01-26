@@ -58,6 +58,11 @@ class Teamleader(object):
         return arg or t()
 
     @staticmethod
+    def _convert_custom_fields(data):
+        for custom_field_id, custom_field_value in data.pop('custom_fields').items():
+            data['custom_field_' + str(custom_field_id)] = custom_field_value
+
+    @staticmethod
     def _clean_input_to_dict(data):
         for key in data.keys():
             if data[key] is None:
@@ -65,7 +70,6 @@ class Teamleader(object):
             elif isinstance(data[key], bool):
                 data[key] = int(data[key])
         return data
-
 
     def get_users(self, show_inactive_users=False):
         """Getting all users.
@@ -181,9 +185,7 @@ class Teamleader(object):
 
         # convert data elements that need conversion
         data['add_tag_by_string'] = ','.join(data.pop('tags'))
-
-        for custom_field_id, custom_field_value in data.pop('custom_fields').items():
-            data['custom_field_' + str(custom_field_id)] = custom_field_value
+        self._convert_custom_fields(data)
 
         if date_of_birth is not None:
             data['dob'] = time.mktime(data.pop('date_of_birth').timetuple())
@@ -589,7 +591,7 @@ class Teamleader(object):
 
     def add_invoice(self, sys_department_id, contact_id=None, company_id=None, for_attention_of=None,
             payment_term=None, invoice_lines=None, draft_invoice=False, layout_id=None, date=None,
-            po_number=None, direct_debit=False, comments=None, force_set_number=None):
+            po_number=None, direct_debit=False, comments=None, force_set_number=None, custom_fields=None):
         """Adding an Invoice to Teamleader.
 
         Args:
@@ -613,6 +615,7 @@ class Teamleader(object):
             direct_debit: True/False: set to True to enable direct debit
             comments: string
             force_set_number: integer: force invoice number to the given integer
+            custom_fields: dict with keys the IDs of your custom fields and values the value to be set
 
         Returns:
             ID of the invoice that was added.
@@ -643,7 +646,11 @@ class Teamleader(object):
         if date is not None and type(date) != datetime.date:
             raise InvalidInputError("Invalid contents of argument date.")
 
+        custom_fields = self._validate_type(custom_fields, dict)
+
         # convert data elements that need conversion
+        self._convert_custom_fields(data)
+
         if contact_id is not None:
             data['contact_or_company'] = 'contact'
             data['contact_or_company_id'] = data.pop('contact_id')

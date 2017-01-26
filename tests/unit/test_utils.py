@@ -13,3 +13,21 @@ def test_validate_type():
 
     with pytest.raises(InvalidInputError):
         Teamleader._validate_type('not a list', list)
+
+
+def test_convert_custom_fields():
+    data = {
+        'key': 'value',
+        'custom_fields': {
+            'key': 'value',
+            'foo': 'bar'
+        }
+    }
+
+    Teamleader._convert_custom_fields(data)
+
+    assert data == {
+        'key': 'value',
+        'custom_field_key': 'value',
+        'custom_field_foo': 'bar'
+    }
