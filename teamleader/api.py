@@ -20,6 +20,8 @@ amount = 100
 
 class Teamleader(object):
 
+    _valid_payment_terms = ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '90D', '30DEM', '60DEM', '90DEM']
+
     def __init__(self, api_group, api_secret):
         log.debug("Initializing Teamleader with group {0} and secret {1}".format(api_group, api_secret))
         self.group = api_group
@@ -392,7 +394,7 @@ class Teamleader(object):
             language: string: language code according to ISO 639-1. For Dutch: "NL"
             tags: list of tags. Existing tags will be reused, other tags will be automatically created
                 for you.
-            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM. Default: 30D
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 90D / 30DEM / 60DEM / 90DEM. Default: 30D
             automerge_by_name: True/False If this flag is set to True, Teamleader will merge this info
                 into an existing company with the same name, if it finds any.
             automerge_by_email: True/False If this flag is set to True, Teamleader will merge this info
@@ -425,7 +427,7 @@ class Teamleader(object):
                 raise InvalidInputError("Invalid contents of argument language.")
 
         if payment_term is not None:
-            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+            if payment_term not in self._valid_payment_terms:
                 raise InvalidInputError("Invalid contents of argument payment_term.")
 
         # convert data elements that need conversion
@@ -466,7 +468,7 @@ class Teamleader(object):
             local_business_number: string containing the local business number (KVK in the Netherlands)
             business_type: string containing the company type (eg NV, BVBA,..)
             language: string: language code according to ISO 639-1. For Dutch: "NL"
-            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM. Default: 30D
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 90D / 30DEM / 60DEM / 90DEM. Default: 30D
             tags: list of tags. Existing tags will be reused, other tags will be automatically created
                 for you.
             del_tags: list of tags to remove.
@@ -494,7 +496,7 @@ class Teamleader(object):
                 raise InvalidInputError("Invalid contents of argument language.")
 
         if payment_term is not None:
-            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+            if payment_term not in self._valid_payment_terms:
                 raise InvalidInputError("Invalid contents of argument payment_term.")
 
         # convert data elements that need conversion
@@ -607,7 +609,7 @@ class Teamleader(object):
                 account: id of the bookkeeping account (optional)
                 subtitle: string (optional)
             for_attention_of: string
-            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 30DEM / 60DEM / 90DEM
+            payment_term: 0D / 7D / 10D / 15D / 21D / 30D / 45D / 60D / 90D / 30DEM / 60DEM / 90DEM
             draft_invoice: True/False: set to True to insert this invoice as a draft. (default: False)
             layout_id: ID of the custom layout you wish to use for this invoice
             date: datetime.date object: the date of the invoice. (default: today)
@@ -632,7 +634,7 @@ class Teamleader(object):
             raise InvalidInputError("Only one of contact_id or company_id is can be set.")
 
         if payment_term is not None:
-            if payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+            if payment_term not in self._valid_payment_terms:
                 raise InvalidInputError("Invalid contents of argument payment_term.")
 
         invoice_lines = self._validate_type(invoice_lines, list)
