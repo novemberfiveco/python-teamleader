@@ -36,6 +36,6 @@ def payment_term_to_invoice(customer_payment_term):
     '''
 
     invoice_payment_term = customer_payment_term.replace('_days', 'D').replace('_end_month', 'DEM')
-    if invoice_payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '30DEM', '60DEM', '90DEM']:
+    if invoice_payment_term not in ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '90D', '30DEM', '60DEM', '90DEM']:
         raise InvalidInputError("Invalid contents of argument customer_payment_term.")
     return invoice_payment_term
