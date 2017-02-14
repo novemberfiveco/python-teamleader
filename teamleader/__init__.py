@@ -1,2 +1,2 @@
 __prog__ = 'python-teamleader'
-__version__ = u'1.1.2'
+__version__ = u'1.1.3'
