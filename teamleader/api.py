@@ -687,8 +687,18 @@ class Teamleader(object):
     def add_creditnote(self):
         pass
 
-    def update_invoice_payment_status(self):
-        pass
+    def update_invoice_payment_status(self, invoice_id, paid=True):
+        """Updating the payment status of an invoice.
+
+        Args:
+            invoice_id: integer: ID of the invoice
+            paid: True/False
+
+        """
+        self._request('setInvoicePaymentStatus', data={
+            'invoice_id': invoice_id,
+            'status': 'paid' if paid else 'not_paid'
+        })
 
     def book_draft_invoice(self):
         pass
@@ -702,8 +712,18 @@ class Teamleader(object):
     def delete_invoice(self):
         pass
 
-    def get_invoices(self):
-        pass
+    def get_invoices(self, since, until):
+        """Getting all invoices in a time period.
+
+        Args:
+            since: date: Start date of the period you are requesting invoices for
+            until: date: End date of the period you are requesting invoices for
+
+        """
+        return self._request('getInvoices', data={
+            'date_from': since.strftime('%d/%m/%Y'),
+            'date_to': until.strftime('%d/%m/%Y')
+        })
 
     def get_creditnotes(self):
         pass
