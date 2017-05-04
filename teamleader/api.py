@@ -20,7 +20,10 @@ amount = 100
 
 class Teamleader(object):
 
-    _valid_payment_terms = ['0D', '7D', '10D', '15D', '21D', '30D', '45D', '60D', '90D', '30DEM', '60DEM', '90DEM']
+    _valid_payment_terms = ['%dD' % i for i in range(16)] + [
+        '20D', '21D', '30D', '45D', '50D', '60D', '75D', '90D', '105D', '180D',
+        '30DEM', '45DEM', '60DEM', '75DEM', '90DEM', '120DEM'
+    ]
 
     def __init__(self, api_group, api_secret):
         log.debug("Initializing Teamleader with group {0} and secret {1}".format(api_group, api_secret))
