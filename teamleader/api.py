@@ -14,7 +14,7 @@ from teamleader.exceptions import *
 logging.basicConfig(level='ERROR')
 log = logging.getLogger('teamleader.api')
 
-base_url = "https://www.teamleader.be/api/{0}.php"
+base_url = "https://app.teamleader.eu/api/{0}.php"
 amount = 100
 
 
